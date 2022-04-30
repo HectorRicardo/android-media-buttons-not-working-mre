@@ -6,6 +6,9 @@ import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE;
 import static com.example.mediabuttonsmre.NotificationsHandler.NOTIFICATION_ID;
 
 import android.content.Intent;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
 import android.support.v4.media.MediaMetadataCompat;
@@ -112,6 +115,9 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
     // Notifications helper
     notificationsHandler = new NotificationsHandler(this, mediaSession);
+
+    // Play dummy audio so media button events are received. Super weird android bug.
+    hack();
   }
 
   @Override
@@ -138,4 +144,20 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
   @Override
   public void onLoadChildren(@NonNull String parentId, @NonNull Result<List<MediaItem>> result) {}
+
+  /** Play dummy blank audio so media button events are listened for. Super weird bug. */
+  private static void hack() {
+    AudioTrack at =
+        new AudioTrack(
+            AudioManager.STREAM_MUSIC,
+            48000,
+            AudioFormat.CHANNEL_OUT_STEREO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            AudioTrack.getMinBufferSize(
+                48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT),
+            AudioTrack.MODE_STREAM);
+    at.play();
+    at.stop();
+    at.release();
+  }
 }
