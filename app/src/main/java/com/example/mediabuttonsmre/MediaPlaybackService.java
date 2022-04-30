@@ -10,10 +10,13 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
+import android.view.KeyEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -34,6 +37,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
       new MediaSessionCompat.Callback() {
         @Override
         public void onPlay() {
+          Log.i("MREAPP", "onPlay");
           super.onPlay();
 
           // Set the session active  (and update metadata and state)
@@ -59,6 +63,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
         @Override
         public void onPause() {
+          Log.i("MREAPP", "onPause");
           super.onPause();
           mediaSession.setPlaybackState(
               playbackStateBuilder
@@ -84,10 +89,17 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
           stopSelf();
           started = false;
         }
+
+        @Override
+        public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
+          Log.i("MREAPP", "OnMediaButtonEvent " + keyEventIntentToString(mediaButtonEvent));
+          return super.onMediaButtonEvent(mediaButtonEvent);
+        }
       };
 
   @Override
   public void onCreate() {
+    Log.i("MREAPP", "Creating service " + hashCode());
     super.onCreate();
 
     // Create a media session
@@ -122,13 +134,28 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
+    Log.i("MREAPP", "Starting service " + hashCode() + " " + keyEventIntentToString(intent));
     started = true;
     MediaButtonReceiver.handleIntent(mediaSession, intent);
     return super.onStartCommand(intent, flags, startId);
   }
 
   @Override
+  public IBinder onBind(Intent intent) {
+    Log.i("MREAPP", "Binding to service " + hashCode());
+    return super.onBind(intent);
+  }
+
+  @Override
+  public boolean onUnbind(Intent intent) {
+    Log.i("MREAPP", "Unbinding from service " + hashCode());
+    return super.onUnbind(intent);
+  }
+
+  @Override
   public void onDestroy() {
+    Log.i("MREAPP", "Destroying  " + hashCode());
+
     super.onDestroy();
 
     // Release media session
@@ -159,5 +186,10 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
     at.play();
     at.stop();
     at.release();
+  }
+
+  private static String keyEventIntentToString(Intent intent) {
+    KeyEvent keyEvent = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+    return keyEvent == null ? null : keyEvent.toString();
   }
 }
