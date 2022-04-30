@@ -3,6 +3,12 @@ package com.example.mediabuttonsmre;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_ARTIST;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_DURATION;
 import static android.support.v4.media.MediaMetadataCompat.METADATA_KEY_TITLE;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
+import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY_PAUSE;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_PAUSED;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
+import static android.support.v4.media.session.PlaybackStateCompat.STATE_STOPPED;
 import static com.example.mediabuttonsmre.NotificationsHandler.NOTIFICATION_ID;
 
 import android.content.Intent;
@@ -30,8 +36,8 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
       new PlaybackStateCompat.Builder();
   private MediaSessionCompat mediaSession;
   private NotificationsHandler notificationsHandler;
+
   private boolean started = false;
-  private boolean foreground = false;
 
   private final MediaSessionCompat.Callback mediaSessionCallbacks =
       new MediaSessionCompat.Callback() {
@@ -40,24 +46,25 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
           Log.i("MREAPP", "onPlay");
           super.onPlay();
 
-          // Set the session active  (and update metadata and state)
+          boolean previouslyForeground =
+              mediaSession.getController().getPlaybackState().getState() == STATE_PLAYING;
+
           mediaSession.setActive(true);
           mediaSession.setPlaybackState(
               playbackStateBuilder
-                  .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1)
-                  .setActions(
-                      PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_PLAY_PAUSE)
+                  .setState(STATE_PLAYING, 0, 1)
+                  .setActions(ACTION_PAUSE | ACTION_PLAY_PAUSE)
                   .build());
 
-          if (!started) {
-            ContextCompat.startForegroundService(
-                MediaPlaybackService.this,
-                new Intent(MediaPlaybackService.this, MediaPlaybackService.class));
-            startForeground(NOTIFICATION_ID, notificationsHandler.createNotification());
-          } else if (!foreground) {
-            startForeground(NOTIFICATION_ID, notificationsHandler.createNotification());
-          } else {
+          if (previouslyForeground) {
             notificationsHandler.postOrUpdateNotification();
+          } else {
+            if (!started) {
+              ContextCompat.startForegroundService(
+                  MediaPlaybackService.this,
+                  new Intent(MediaPlaybackService.this, MediaPlaybackService.class));
+            }
+            startForeground(NOTIFICATION_ID, notificationsHandler.createNotification());
           }
         }
 
@@ -67,13 +74,11 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
           super.onPause();
           mediaSession.setPlaybackState(
               playbackStateBuilder
-                  .setState(PlaybackStateCompat.STATE_PAUSED, 0, 1)
-                  .setActions(
-                      PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE)
+                  .setState(STATE_PAUSED, 0, 1)
+                  .setActions(ACTION_PLAY | ACTION_PLAY_PAUSE)
                   .build());
           notificationsHandler.postOrUpdateNotification();
           stopForeground(false);
-          foreground = false;
         }
 
         @Override
@@ -82,12 +87,10 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
           mediaSession.setActive(false);
           mediaSession.setPlaybackState(
               playbackStateBuilder
-                  .setState(PlaybackStateCompat.STATE_STOPPED, 0, 1)
-                  .setActions(
-                      PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE)
+                  .setState(STATE_STOPPED, 0, 1)
+                  .setActions(ACTION_PLAY | ACTION_PLAY_PAUSE)
                   .build());
           stopSelf();
-          started = false;
         }
 
         @Override
@@ -107,9 +110,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
     // Set available actions to listen for: PLAY and PLAY_PAUSE
     mediaSession.setPlaybackState(
-        playbackStateBuilder
-            .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PLAY_PAUSE)
-            .build());
+        playbackStateBuilder.setActions(ACTION_PLAY | ACTION_PLAY_PAUSE).build());
 
     // Metadata for session - this won't ever change
     mediaSession.setMetadata(
