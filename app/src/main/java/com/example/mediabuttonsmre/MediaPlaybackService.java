@@ -43,7 +43,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
       new MediaSessionCompat.Callback() {
         @Override
         public void onPlay() {
-          Log.i("MREAPP", "onPlay");
+          Log.i("MREAPP", "onPlay " + MediaPlaybackService.this.hashCode());
           super.onPlay();
 
           boolean previouslyForeground =
@@ -83,6 +83,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
         @Override
         public void onStop() {
+          Log.i("MREAPP", "onStop");
           super.onStop();
           mediaSession.setActive(false);
           mediaSession.setPlaybackState(
@@ -95,7 +96,8 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
         @Override
         public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
-          Log.i("MREAPP", "OnMediaButtonEvent " + keyEventIntentToString(mediaButtonEvent));
+          KeyEvent keyEvent = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+          Log.i("MREAPP", "OnMediaButtonEvent " + toConcatString(keyEvent));
           return super.onMediaButtonEvent(mediaButtonEvent);
         }
       };
@@ -127,7 +129,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
     setSessionToken(mediaSession.getSessionToken());
 
     // Notifications helper
-    notificationsHandler = new NotificationsHandler(this, mediaSession);
+    notificationsHandler = new NotificationsHandler(getBaseContext(), mediaSession);
 
     // Play dummy audio so media button events are received. Super weird android bug.
     hack();
@@ -135,7 +137,10 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
-    Log.i("MREAPP", "Starting service " + hashCode() + " " + keyEventIntentToString(intent));
+    KeyEvent keyEvent = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+    Log.i(
+        "MREAPP", "Receiving start service command " + hashCode() + " " + toConcatString(keyEvent));
+
     started = true;
     MediaButtonReceiver.handleIntent(mediaSession, intent);
     return super.onStartCommand(intent, flags, startId);
@@ -189,8 +194,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
     at.release();
   }
 
-  private static String keyEventIntentToString(Intent intent) {
-    KeyEvent keyEvent = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-    return keyEvent == null ? null : keyEvent.toString();
+  private static String toConcatString(Object object) {
+    return object == null ? null : object.toString();
   }
 }

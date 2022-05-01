@@ -6,6 +6,7 @@ import static android.support.v4.media.session.PlaybackStateCompat.ACTION_STOP;
 import static android.support.v4.media.session.PlaybackStateCompat.STATE_PLAYING;
 import static androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC;
 import static androidx.core.app.NotificationManagerCompat.IMPORTANCE_LOW;
+import static androidx.media.session.MediaButtonReceiver.buildMediaButtonPendingIntent;
 
 import android.app.Notification;
 import android.content.Context;
@@ -17,7 +18,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationCompat.Action;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.media.app.NotificationCompat.MediaStyle;
-import androidx.media.session.MediaButtonReceiver;
 
 public class NotificationsHandler {
 
@@ -38,17 +38,16 @@ public class NotificationsHandler {
     this.mediaSession = mediaSession;
     playAction =
         new Action(
-            R.drawable.exo_icon_play,
-            "play",
-            MediaButtonReceiver.buildMediaButtonPendingIntent(context, ACTION_PLAY));
+            R.drawable.exo_icon_play, "play", buildMediaButtonPendingIntent(context, ACTION_PLAY));
     pauseAction =
         new Action(
             R.drawable.exo_icon_pause,
             "pause",
-            MediaButtonReceiver.buildMediaButtonPendingIntent(context, ACTION_PAUSE));
+            buildMediaButtonPendingIntent(context, ACTION_PAUSE));
 
     createNotificationChannel(context);
-    MediaDescriptionCompat mediaDescription = mediaSession.getController().getMetadata().getDescription();
+    MediaDescriptionCompat mediaDescription =
+        mediaSession.getController().getMetadata().getDescription();
 
     notificationBuilder =
         new NotificationCompat.Builder(context, CHANNEL_ID)
@@ -57,8 +56,7 @@ public class NotificationsHandler {
             .setContentTitle(mediaDescription.getTitle())
             .setContentText(mediaDescription.getSubtitle())
             .setSubText(mediaDescription.getDescription())
-            .setDeleteIntent(
-                MediaButtonReceiver.buildMediaButtonPendingIntent(context, ACTION_STOP))
+            .setDeleteIntent(buildMediaButtonPendingIntent(context, ACTION_STOP))
             .setVisibility(VISIBILITY_PUBLIC)
             .setColor(Color.BLACK) // you need this because of bug
             .setStyle(
