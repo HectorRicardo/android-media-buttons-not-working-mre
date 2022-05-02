@@ -32,6 +32,8 @@ import java.util.List;
 
 public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
+  private final String LOG_TAG = "MREAPP";
+
   private final PlaybackStateCompat.Builder playbackStateBuilder =
       new PlaybackStateCompat.Builder();
   private MediaSessionCompat mediaSession;
@@ -43,7 +45,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
       new MediaSessionCompat.Callback() {
         @Override
         public void onPlay() {
-          Log.i("MREAPP", "onPlay " + MediaPlaybackService.this.hashCode());
+          Log.i(LOG_TAG, "onPlay " + MediaPlaybackService.this.hashCode());
           super.onPlay();
 
           boolean previouslyForeground =
@@ -70,7 +72,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
         @Override
         public void onPause() {
-          Log.i("MREAPP", "onPause");
+          Log.i(LOG_TAG, "onPause");
           super.onPause();
           mediaSession.setPlaybackState(
               playbackStateBuilder
@@ -83,7 +85,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
         @Override
         public void onStop() {
-          Log.i("MREAPP", "onStop");
+          Log.i(LOG_TAG, "onStop");
           super.onStop();
           mediaSession.setActive(false);
           mediaSession.setPlaybackState(
@@ -97,14 +99,14 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
         @Override
         public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
           KeyEvent keyEvent = mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-          Log.i("MREAPP", "OnMediaButtonEvent " + toConcatString(keyEvent));
+          Log.i(LOG_TAG, "OnMediaButtonEvent " + toConcatString(keyEvent));
           return super.onMediaButtonEvent(mediaButtonEvent);
         }
       };
 
   @Override
   public void onCreate() {
-    Log.i("MREAPP", "Creating service " + hashCode());
+    Log.i(LOG_TAG, "Creating service " + hashCode());
     super.onCreate();
 
     // Create a media session
@@ -139,7 +141,7 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
   public int onStartCommand(Intent intent, int flags, int startId) {
     KeyEvent keyEvent = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
     Log.i(
-        "MREAPP", "Receiving start service command " + hashCode() + " " + toConcatString(keyEvent));
+        LOG_TAG, "Receiving start service command " + hashCode() + " " + toConcatString(keyEvent));
 
     started = true;
     MediaButtonReceiver.handleIntent(mediaSession, intent);
@@ -148,19 +150,19 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
 
   @Override
   public IBinder onBind(Intent intent) {
-    Log.i("MREAPP", "Binding to service " + hashCode());
+    Log.i(LOG_TAG, "Binding to service " + hashCode());
     return super.onBind(intent);
   }
 
   @Override
   public boolean onUnbind(Intent intent) {
-    Log.i("MREAPP", "Unbinding from service " + hashCode());
+    Log.i(LOG_TAG, "Unbinding from service " + hashCode());
     return super.onUnbind(intent);
   }
 
   @Override
   public void onDestroy() {
-    Log.i("MREAPP", "Destroying  " + hashCode());
+    Log.i(LOG_TAG, "Destroying  " + hashCode());
 
     super.onDestroy();
 
@@ -172,11 +174,14 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
   @Override
   public BrowserRoot onGetRoot(
       @NonNull String clientPackageName, int clientUid, @Nullable Bundle rootHints) {
+    Log.i(LOG_TAG, "onGetRoot " + clientPackageName + " " + clientUid + " " + rootHints);
     return new BrowserRoot("empty", null);
   }
 
   @Override
-  public void onLoadChildren(@NonNull String parentId, @NonNull Result<List<MediaItem>> result) {}
+  public void onLoadChildren(@NonNull String parentId, @NonNull Result<List<MediaItem>> result) {
+    Log.i(LOG_TAG, "OnLoadChildren " + parentId);
+  }
 
   /** Play dummy blank audio so media button events are listened for. Super weird bug. */
   private static void hack() {
